@@ -1,0 +1,38 @@
+name: Build Android APK
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libffi-dev libssl-dev tcl-dev tk-dev graphviz libgraphviz-dev
+        pip install --upgrade pip
+        pip install buildozer cython kivy plyer
+
+    - name: Create Buildozer Spec
+      run: |
+        buildozer init
+        sed -i 's/requirements = kivy/requirements = python3,kivy,plyer/' buildozer.spec
+        sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/' buildozer.spec
+
+    - name: Build with Buildozer
+      run: |
+        export APP_ALLOW_ROOT=1
+        buildozer -v android debug
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: privacy-bot-apk
+        path: bin/*.apk
