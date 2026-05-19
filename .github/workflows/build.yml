@@ -16,15 +16,24 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libffi-dev libssl-dev tcl-dev tk-dev graphviz libgraphviz-dev
+        sudo apt-get install -y build-essential libffi-dev libssl-dev tcl-dev tk-dev graphviz libgraphviz-dev openjdk-17-jdk
         pip install --upgrade pip
         pip install buildozer cython kivy plyer
+
+    - name: Auto-Accept Android Licenses
+      run: |
+        mkdir -p ~/.android
+        touch ~/.android/repositories.cfg
+        # Install sdkmanager and force accept licenses
+        yes | sudo sdkmanager --licenses || true
 
     - name: Create Buildozer Spec
       run: |
         buildozer init
         sed -i 's/requirements = kivy/requirements = python3,kivy,plyer/' buildozer.spec
         sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/' buildozer.spec
+        # Force lower build-tools version if 37 has issues
+        sed -i 's/#android.build_tools_version =/android.build_tools_version = 34.0.0/' buildozer.spec
 
     - name: Build with Buildozer
       run: |
